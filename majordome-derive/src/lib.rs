@@ -6,8 +6,8 @@ mod majordome_errors;
 /// - `prefix`: Prefix for the error code. Required.
 /// Enum Variants Attributes:
 /// - `code`: Error code. Required.
-/// - `msg`: Error message. Required. The string is formatted using enum variant fields.
-/// - `status`: HTTP status code. Optional. Default is 500.
+/// - `msg`: Error message. The string is formatted using enum variant fields. Required.
+/// - `status`: HTTP status code. Required.
 /// 
 /// # Example
 /// ```rs
