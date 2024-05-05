@@ -36,8 +36,9 @@ struct InternalError {
 
 impl<E: std::error::Error + Send + Sync + 'static> From<E> for MajordomeError {
     fn from(error: E) -> Self {
+        let error_id = Uuid::new_v4();
         let error = InternalError {
-            id: Uuid::new_v4(),
+            id: error_id.clone(),
             backtrace: Box::new(Backtrace::force_capture()),
             inner: Box::new(error),
         };
@@ -47,8 +48,8 @@ impl<E: std::error::Error + Send + Sync + 'static> From<E> for MajordomeError {
 
         MajordomeError {
             error: "errors.generic.internal".to_string(),
-            message: format!("Something went wrong. Our team has been informed."),
-            values: vec![],
+            message: format!("Something went wrong. Our team has been informed. (Error ID: {})", error_id),
+            values: vec![error_id.to_string()],
             status_code: 500,
         }
     }
