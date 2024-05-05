@@ -1,0 +1,13 @@
+[package]
+name = "majordome-derive"
+version = "1.0.0"
+edition = "2021"
+description = "Derive macros for the majordome crate"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = "1.0"
+quote = "1.0"
+cfg-if = "1.0"

@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "majordome",
+    "majordome-derive"
+]
+resolver = "2"
