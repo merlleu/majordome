@@ -34,12 +34,12 @@ struct InternalError {
     pub inner: Box<dyn std::error::Error>,
 }
 
-impl From<Box<dyn std::error::Error>> for MajordomeError {
-    fn from(error: Box<dyn std::error::Error>) -> Self {
+impl<E: std::error::Error + Send + Sync + 'static> From<E> for MajordomeError {
+    fn from(error: E) -> Self {
         let error = InternalError {
             id: Uuid::new_v4(),
             backtrace: Box::new(Backtrace::force_capture()),
-            inner: error,
+            inner: Box::new(error),
         };
 
         // temporary: log the error
