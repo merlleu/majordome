@@ -43,7 +43,7 @@ impl<E: std::error::Error + Send + Sync + 'static> From<E> for MajordomeError {
         };
 
         // temporary: log the error
-        log::error!("{:?}", error);
+        tracing::error!("{:?}", error);
 
         MajordomeError {
             error: "errors.generic.internal".to_string(),
