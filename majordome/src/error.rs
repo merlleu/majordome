@@ -30,7 +30,6 @@ impl MajordomeError {
 #[allow(dead_code)]
 struct InternalError {
     pub id: Uuid,
-    pub backtrace: Box<Backtrace>,
     pub inner: Box<dyn std::error::Error>,
 }
 
@@ -39,7 +38,6 @@ impl<E: std::error::Error + Send + Sync + 'static> From<E> for MajordomeError {
         let error_id = Uuid::new_v4();
         let error = InternalError {
             id: error_id.clone(),
-            backtrace: Box::new(Backtrace::force_capture()),
             inner: Box::new(error),
         };
 
