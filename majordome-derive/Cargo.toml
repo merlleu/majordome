@@ -3,6 +3,7 @@ name = "majordome-derive"
 version = "1.0.0"
 edition = "2021"
 description = "Derive macros for the majordome crate"
+license = "MIT"
 
 [lib]
 proc-macro = true
