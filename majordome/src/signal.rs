@@ -100,6 +100,20 @@ impl MajordomeApp {
         }
     }
 
+    /// Wait for the app to exit/stop.
+    /// Same as sleep_until_closing but without a duration.
+    /// Use ignore_exit if you are inside a Module, NEVER use it on the main app.
+    pub async fn wait_until_closing(&self, ignore_exit: bool) {
+        let chan = if ignore_exit {
+            &self.signal.is_closing_channel
+        } else {
+            &self.signal.is_exiting_channel
+        };
+
+        let mut rx = chan.1.resubscribe();
+        let _ = rx.recv().await;
+    }
+
     /// Stop the app.
     /// Should be called at the end of the main function.
     pub async fn stop(self) {
