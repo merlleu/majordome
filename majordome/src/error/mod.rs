@@ -1,4 +1,3 @@
-use std::backtrace::Backtrace;
 use uuid::Uuid;
 
 #[derive(Debug, serde::Serialize, Clone)]

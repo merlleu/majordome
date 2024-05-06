@@ -52,6 +52,25 @@ impl<'a> AppModConfigGetter<'a> {
         }
     }
 
+    pub fn get_optional<T>(&self, key: &str) -> Option<T>
+    where
+        T: Clone + std::str::FromStr,
+    {
+        let key = self.create_key(key);
+        let s = match self.bld.app.config.get(&key) {
+            Some(s) => s,
+            None => return None,
+        };
+
+        match s.parse::<T>() {
+            Ok(v) => Some(v),
+            Err(_) => {
+                eprintln!("Failed to parse config value for key '{}'.", key);
+                None
+            }
+        }
+    }
+
     fn create_key(&self, key: &str) -> String {
         match self.ns {
             Some(ns) => format!("{}_{}_{}", ns, self.name, key),
