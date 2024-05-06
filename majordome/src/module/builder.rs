@@ -12,9 +12,9 @@ use std::{
 pub struct AppModBuilder {
     pub app: MajordomeAppInner,
 
-    loadchain: Vec<String>,
-    loaded: HashMap<String, HashMap<TypeId, HashSet<u64>>>, // name -> (typeid, ConfigHash)
-    loaded_targets_count: usize,
+    pub(crate) loadchain: Vec<String>,
+    pub(crate) loaded: HashMap<String, HashMap<TypeId, HashSet<u64>>>, // name -> (typeid, ConfigHash)
+    pub(crate) loaded_targets_count: usize,
 }
 
 impl AppModBuilder {

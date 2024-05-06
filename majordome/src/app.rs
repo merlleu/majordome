@@ -3,7 +3,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use crate::signal::MajordomeSignal;
-use crate::ModuleStore;
+use crate::{AppModBuilder, ModuleStore};
 
 pub struct MajordomeAppInner {
     // Configuration values, gathered from the environment.
@@ -68,6 +68,15 @@ impl MajordomeApp {
             config,
             modules: ModuleStore::default(),
             signal,
+        }
+    }
+
+    pub async fn builder() -> AppModBuilder {
+        AppModBuilder {
+            app: Self::init().await,
+            loadchain: Vec::new(),
+            loaded: HashMap::new(),
+            loaded_targets_count: 0,
         }
     }
 }
