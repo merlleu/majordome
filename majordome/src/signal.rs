@@ -118,12 +118,13 @@ impl MajordomeApp {
     /// Same as wait_until_closing but with a static lifetime.
     /// Only use this if you need a static lifetime, it is not recommended.
     /// Use ignore_exit if you are inside a Module, NEVER use it on the main app.
-    pub fn wait_for_shutdown_static(app: &MajordomeApp) -> impl std::future::Future<Output = ()> {
-        static APP: OnceLock<MajordomeApp> = OnceLock::new();
-        let _ = APP.set(app.clone());
+    pub fn wait_for_shutdown_static(&self, ignore_exit: bool) -> impl std::future::Future<Output = ()> {
+        static APP: OnceLock<(MajordomeApp, bool)> = OnceLock::new();
+        let _ = APP.set((self.clone(), ignore_exit));
     
         async fn wait() {
-            APP.get().unwrap().wait_until_closing(false).await;
+            let (app, ignore_exit) = APP.get().unwrap();
+            app.wait_until_closing(*ignore_exit).await;
         }
     
         return wait();
