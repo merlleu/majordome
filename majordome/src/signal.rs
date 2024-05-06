@@ -1,5 +1,5 @@
 use crate::MajordomeApp;
-use std::sync::atomic::AtomicBool;
+use std::sync::{atomic::AtomicBool, OnceLock};
 use tokio::sync::Mutex;
 
 /// Signal handling for the app.
@@ -114,6 +114,21 @@ impl MajordomeApp {
         let _ = rx.recv().await;
     }
 
+    /// Wait for the app to exit/stop.
+    /// Same as wait_until_closing but with a static lifetime.
+    /// Only use this if you need a static lifetime, it is not recommended.
+    /// Use ignore_exit if you are inside a Module, NEVER use it on the main app.
+    pub fn wait_for_shutdown_static(app: &MajordomeApp) -> impl std::future::Future<Output = ()> {
+        static APP: OnceLock<MajordomeApp> = OnceLock::new();
+        let _ = APP.set(app.clone());
+    
+        async fn wait() {
+            APP.get().unwrap().wait_until_closing(false).await;
+        }
+    
+        return wait();
+    }
+
     /// Stop the app.
     /// Should be called at the end of the main function.
     pub async fn stop(self) {
@@ -124,3 +139,5 @@ impl MajordomeApp {
         crate::module::builder::stop_modules(self.clone()).await;
     }
 }
+
+
