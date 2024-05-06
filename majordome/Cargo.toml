@@ -1,6 +1,6 @@
 [package]
 name = "majordome"
-version = "1.0.4"
+version = "1.0.5"
 edition = "2021"
 description = "A modular state manager for Rust API and Services."
 license = "MIT"
