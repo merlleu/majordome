@@ -56,6 +56,18 @@ impl AppMod for MajordomeCache {
 }
 
 impl MajordomeCache {
+    /// Create a new cache getter for key.
+    /// ```rust
+    /// 
+    /// async fn your_async_getter() -> Result<String, ()> {
+    ///    tokio::time::sleep(Duration::from_secs(5)).await;
+    ///    Ok("value".to_string())
+    /// }
+    /// 
+    /// let cache = app.get::<MajordomeCache>()?;
+    /// cache.key(("key1", 1, 5)).ttl(60).try_get_with(your_async_getter).await?;
+    /// 
+    /// ```
     pub fn key<T: Hash>(&self, key: T) -> MajordomeCacheGetter {
         MajordomeCacheGetter::new(self, key)
     }

@@ -2,6 +2,8 @@
 name = "majordome-cache"
 version = "1.0.0"
 edition = "2021"
+description = "A cache module for Majordome. Currently based on Moka."
+license = "MIT"
 
 [dependencies]
 majordome = "1"
