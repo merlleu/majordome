@@ -25,7 +25,7 @@ impl<'a> MajordomeCacheGetter<'a> {
 
     pub async fn try_get_with<T, E>(&self, future: impl Future<Output = Result<T, E>>) -> Result<Arc<T>, E> 
     where
-        T: 'static + Clone + Send + Sync,
+        T: 'static + Send + Sync,
         E: 'static + Clone + Send + Sync
     {
         let key = (TypeId::of::<T>(), self.key);
