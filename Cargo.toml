@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "majordome",
+    "majordome", "majordome-cache",
     "majordome-derive"
 ]
 resolver = "2"

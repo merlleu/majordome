@@ -45,7 +45,10 @@ impl<E: std::error::Error + Send + Sync + 'static> From<E> for MajordomeError {
 
         MajordomeError {
             error: "errors.generic.internal".to_string(),
-            message: format!("Something went wrong. Our team has been informed. (Error ID: {})", error_id),
+            message: format!(
+                "Something went wrong. Our team has been informed. (Error ID: {})",
+                error_id
+            ),
             values: vec![error_id.to_string()],
             status_code: 500,
         }
@@ -67,7 +70,6 @@ macro_rules! ensure {
         }
     };
 }
-
 
 // Converters
 #[cfg(feature = "axum")]

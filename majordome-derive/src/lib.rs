@@ -8,7 +8,7 @@ mod majordome_errors;
 /// - `code`: Error code. Required.
 /// - `msg`: Error message. The string is formatted using enum variant fields. Required.
 /// - `status`: HTTP status code. Required.
-/// 
+///
 /// # Example
 /// ```rs
 /// #[derive(MajordomeError)]
@@ -19,12 +19,12 @@ mod majordome_errors;
 ///
 ///     #[err(code="unknown_event", msg="Unknown event {id}", status=404)]
 ///     UnknownEvent {id: String},
-/// 
+///
 ///     #[err(code="not_enough_players", msg="Not enough players (required: {required}, actual: {actual})", status=400)]
 ///     NotEnoughPlayers{required: u32, actual: u32},
 /// }
 /// ```
-/// 
+///
 /// Into/From are implemented for MajordomeError.
 /// ```rs
 /// AuthError::UnknownEvent{id: "123".to_string()}.into()
