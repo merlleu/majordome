@@ -1,7 +1,7 @@
 use std::{any::{Any, TypeId}, hash::Hash, sync::Arc};
 
 use async_trait::async_trait;
-use majordome::{AppMod, AppModBuilder, AppModConfigGetter, AppModInitOptions, AppModRuntime, MajordomeError};
+use majordome::{appmod_decl_self_pointer, AppMod, AppModBuilder, AppModConfigGetter, AppModInitOptions, AppModRuntime, MajordomeError};
 use moka::future::Cache;
 
 use crate::{expiry::MajordomeExpiry, getter::MajordomeCacheGetter};
@@ -57,6 +57,8 @@ impl AppMod for MajordomeCache {
 
 impl MajordomeCache {
     /// Create a new cache getter for key.
+    /// The cache takes into account the type of the return value and the key.
+    /// By default, the cache will not expire. You can set the expiration time with the ttl method.
     /// ```rust
     /// 
     /// async fn your_async_getter() -> Result<String, ()> {
@@ -72,3 +74,5 @@ impl MajordomeCache {
         MajordomeCacheGetter::new(self, key)
     }
 }
+
+appmod_decl_self_pointer!(MajordomeCache);
