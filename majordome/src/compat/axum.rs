@@ -40,19 +40,19 @@ impl From<JsonRejection> for _MajordomeRejectionError {
         let e = match rejection {
             JsonRejection::BytesRejection(e) => MajordomeError {
                 error: format!("errors.generic.bad_request.json.bytes_rejection"),
-                message: format!("Failed to read JSON body: {}", e.body_text()),
+                message: e.body_text(),
                 values: vec![e.body_text()],
                 status_code: 400
             },
             JsonRejection::JsonDataError(e) => MajordomeError {
                 error: format!("errors.generic.bad_request.json.data_error"),
-                message: format!("Failed to deserialize JSON body: {}", e.body_text()),
+                message: e.body_text(),
                 values: vec![e.body_text()],
                 status_code: 400
             },
             JsonRejection::JsonSyntaxError(e) => MajordomeError {
                 error: format!("errors.generic.bad_request.json.syntax_error"),
-                message: format!("Failed to parse JSON body: {}", e),
+                message: e.body_text(),
                 values: vec![e.body_text()],
                 status_code: 400
             },
@@ -64,7 +64,7 @@ impl From<JsonRejection> for _MajordomeRejectionError {
             },
             _ => MajordomeError {
                 error: format!("errors.generic.bad_request.json.unknown"),
-                message: format!("Unknown JSON error: {:?}", rejection.body_text()),
+                message: format!("Unknown JSON error: {}", rejection.body_text()),
                 values: vec![rejection.body_text()],
                 status_code: 400
             }
