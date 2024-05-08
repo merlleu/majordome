@@ -26,7 +26,7 @@ impl axum::response::IntoResponse for _MajordomeRejectionError {
 // JSON
 #[derive(FromRequest)]
 #[from_request(via(axum::Json), rejection(_MajordomeRejectionError))]
-pub struct Json<T>(T);
+pub struct Json<T>(pub T);
 
 impl<T: Serialize> IntoResponse for Json<T> {
     fn into_response(self) -> axum::response::Response {
