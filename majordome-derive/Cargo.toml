@@ -4,6 +4,7 @@ version = "1.0.2"
 edition = "2021"
 description = "Derive macros for the majordome crate"
 license = "MIT"
+repository = "https://github.com/merlleu/majordome"
 
 [lib]
 proc-macro = true

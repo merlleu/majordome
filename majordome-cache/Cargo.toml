@@ -4,6 +4,7 @@ version = "1.0.2"
 edition = "2021"
 description = "A cache module for Majordome. Currently based on Moka."
 license = "MIT"
+repository = "https://github.com/merlleu/majordome"
 
 [dependencies]
 majordome = "1"
