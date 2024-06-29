@@ -1,6 +1,7 @@
 use uuid::Uuid;
+use schemars::JsonSchema;
 
-#[derive(Debug, serde::Serialize, Clone)]
+#[derive(Debug, serde::Serialize, Clone, JsonSchema)]
 #[non_exhaustive]
 pub struct MajordomeError {
     pub error: String,
