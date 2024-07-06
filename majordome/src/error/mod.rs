@@ -1,7 +1,11 @@
+use std::collections::BTreeMap;
 use uuid::Uuid;
-use schemars::JsonSchema;
 
-#[derive(Debug, serde::Serialize, Clone, JsonSchema)]
+#[cfg(feature = "actix")]
+use apistos_schemars as schemars;
+
+#[derive(Debug, serde::Serialize, Clone)]
+#[cfg_attr(feature = "actix", derive(apistos_schemars::JsonSchema))]
 #[non_exhaustive]
 pub struct MajordomeError {
     pub error: String,
@@ -9,6 +13,17 @@ pub struct MajordomeError {
     pub values: Vec<String>,
     #[serde(skip_serializing)]
     pub status_code: u16,
+}
+
+#[cfg(feature = "actix")]
+impl apistos::ApiErrorComponent for MajordomeError {
+    fn schemas_by_status_code() -> BTreeMap<String, (String, apistos::reference_or::ReferenceOr<apistos_schemars::schema::Schema>)> {
+        BTreeMap::default()
+    }
+
+    fn error_responses() -> Vec<(String, apistos::paths::Response)> {
+        vec![]
+    }
 }
 
 impl MajordomeError {

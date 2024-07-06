@@ -1,6 +1,6 @@
 [package]
 name = "majordome"
-version = "1.0.17"
+version = "1.0.18"
 edition = "2021"
 description = "A modular state manager for Rust API and Services."
 license = "MIT"
@@ -14,7 +14,10 @@ async-trait = "0.1.80"
 tracing = "0.1.40"
 axum = { version = "0.7", features = ["macros"], optional = true }
 majordome-derive = { path = "../majordome-derive", version = "1" }
-schemars = { version = "0.8.21", features = ["uuid1"] }
+apistos-schemars = { version = "0.8", optional = true, features = ["uuid1"] }
+apistos = {version = "0.2", optional = true}
+actix-web = { version = "4", optional = true }
 
 [features]
-default = []
+default = ["actix"]
+actix = ["apistos", "apistos-schemars", "actix-web"]
