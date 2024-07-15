@@ -181,6 +181,15 @@ macro_rules! appmod_decl_self_pointer {
     };
 }
 
+#[macro_export]
+macro_rules! appmod_decl_self_pointer_arc {
+    ($name:ty) => {
+        impl ::majordome::AppModPointer for $name {
+            type Target = std::sync::Arc<Self>;
+        }
+    };
+}
+
 // appmod_decl_ns_pointer!(DefaultModulePointer, DefaultModule, "default");
 // appmod_decl_self_pointer!(DefaultModule);
 
