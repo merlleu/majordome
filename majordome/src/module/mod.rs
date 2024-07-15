@@ -1,4 +1,4 @@
-use std::{any::Any, fmt::Debug, hash::Hash};
+use std::{any::Any, fmt::Debug, hash::Hash, sync::Arc};
 
 use crate::{MajordomeApp, MajordomeError};
 use async_trait::async_trait;
@@ -49,6 +49,39 @@ pub trait AppModPointer {
         }
     }
 }
+
+#[async_trait]
+impl<T> AppMod for Arc<T>
+where
+    T: AppMod + Send + Sync,
+{
+    type InitOptions = T::InitOptions;
+    type ModConfig = T::ModConfig;
+
+    async fn config(
+        builder: &mut AppModBuilder,
+        opt: AppModInitOptions<Self::InitOptions>,
+    ) -> Result<Self::ModConfig, MajordomeError> {
+        T::config(builder, opt).await
+    }
+
+    async fn init(builder: &mut AppModBuilder, config: Self::ModConfig) -> Result<Self, MajordomeError> {
+        T::init(builder, config).await.map(Arc::new)
+    }
+}
+
+#[async_trait]
+impl<T> AppModRuntime for Arc<T> where T: AppModRuntime {
+    async fn run(&self, app: MajordomeApp) -> Vec<AppModTask> {
+        self.as_ref().run(app).await
+    }
+
+    async fn stop(&self, app: MajordomeApp) {
+        self.as_ref().stop(app).await
+    }
+}
+
+
 
 #[derive(Default, Hash)]
 #[non_exhaustive]
