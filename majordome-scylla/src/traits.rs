@@ -1,7 +1,7 @@
 use majordome::MajordomeError;
 use scylla::FromRow;
 
-pub trait MjScyllaORM {
+pub trait ScyllaORMTable {
     type Updater;
     fn update(self) -> Self::Updater;
     // fn select<T>(&self) -> T;
@@ -9,13 +9,13 @@ pub trait MjScyllaORM {
     fn query() -> &'static str;
 }
 
-pub struct MajordomeScyllaSelectResult<T: FromRow + MjScyllaORM> {
+pub struct MajordomeScyllaSelectResult<T: FromRow + ScyllaORMTable> {
     pub resp: smallvec::SmallVec<[T; 1]>,
 }
 
 impl<T> MajordomeScyllaSelectResult<T>
 where
-    T: FromRow + MjScyllaORM,
+    T: FromRow + ScyllaORMTable,
 {
     pub fn one(self) -> Result<T, MajordomeError> {
         match self.resp.len() {

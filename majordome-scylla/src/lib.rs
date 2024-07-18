@@ -7,6 +7,8 @@ use scylla::{prepared_statement::PreparedStatement, serialize::row::SerializeRow
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
+pub use majordome_derive::ScyllaRow;
+
 mod err;
 mod traits;
 pub use err::*;

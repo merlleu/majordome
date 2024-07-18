@@ -262,7 +262,7 @@ impl Renderer {
                     #select_methods
                 }
 
-                impl ::majordome_scylla::MjScyllaORM for #structname {
+                impl ::majordome_scylla::ScyllaORMTable for #structname {
                     type Updater = #updatername;
                     fn update(self) -> #updatername {
                         #updatername::new(self)

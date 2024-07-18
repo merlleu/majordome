@@ -1,5 +1,4 @@
-use majordome_derive::ScyllaRow;
-use majordome_scylla::MjScyllaORM;
+use majordome_scylla::{ScyllaORMTable, ScyllaRow};
 use scylla::FromRow;
 
 #[derive(ScyllaRow, FromRow)]
