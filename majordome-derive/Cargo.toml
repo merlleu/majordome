@@ -1,6 +1,6 @@
 [package]
 name = "majordome-derive"
-version = "1.0.2"
+version = "1.0.3"
 edition = "2021"
 description = "Derive macros for the majordome crate"
 license = "MIT"
