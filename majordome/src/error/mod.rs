@@ -17,7 +17,13 @@ pub struct MajordomeError {
 
 #[cfg(feature = "actix")]
 impl apistos::ApiErrorComponent for MajordomeError {
-    fn schemas_by_status_code() -> BTreeMap<String, (String, apistos::reference_or::ReferenceOr<apistos_schemars::schema::Schema>)> {
+    fn schemas_by_status_code() -> BTreeMap<
+        String,
+        (
+            String,
+            apistos::reference_or::ReferenceOr<apistos_schemars::schema::Schema>,
+        ),
+    > {
         BTreeMap::default()
     }
 
@@ -60,7 +66,7 @@ impl<E: std::error::Error + Send + Sync + 'static> From<E> for MajordomeError {
         tracing::error!("{:?}", error);
 
         MajordomeError {
-            error: "errors.generic.internal".to_string(),
+            error: "errors.service.internal".to_string(),
             message: format!(
                 "Something went wrong. Our team has been informed. (Error ID: {})",
                 error_id

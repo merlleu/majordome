@@ -65,13 +65,19 @@ where
         T::config(builder, opt).await
     }
 
-    async fn init(builder: &mut AppModBuilder, config: Self::ModConfig) -> Result<Self, MajordomeError> {
+    async fn init(
+        builder: &mut AppModBuilder,
+        config: Self::ModConfig,
+    ) -> Result<Self, MajordomeError> {
         T::init(builder, config).await.map(Arc::new)
     }
 }
 
 #[async_trait]
-impl<T> AppModRuntime for Arc<T> where T: AppModRuntime {
+impl<T> AppModRuntime for Arc<T>
+where
+    T: AppModRuntime,
+{
     async fn run(&self, app: MajordomeApp) -> Vec<AppModTask> {
         self.as_ref().run(app).await
     }
@@ -80,8 +86,6 @@ impl<T> AppModRuntime for Arc<T> where T: AppModRuntime {
         self.as_ref().stop(app).await
     }
 }
-
-
 
 #[derive(Default, Hash)]
 #[non_exhaustive]

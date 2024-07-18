@@ -1,6 +1,6 @@
 mod appmod;
-mod getter;
 mod expiry;
+mod getter;
 
 pub use appmod::MajordomeCache;
 pub use getter::MajordomeCacheGetter;

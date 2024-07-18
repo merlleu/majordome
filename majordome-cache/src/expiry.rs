@@ -16,7 +16,7 @@ impl Expiry<CacheKey, CacheValue> for MajordomeExpiry {
     ) -> Option<Duration> {
         if value.ttl == 0 {
             None
-         } else  {
+        } else {
             Some(Duration::from_secs(value.ttl))
         }
     }

@@ -1,7 +1,14 @@
-use std::{any::{Any, TypeId}, hash::Hash, sync::Arc};
+use std::{
+    any::{Any, TypeId},
+    hash::Hash,
+    sync::Arc,
+};
 
 use async_trait::async_trait;
-use majordome::{appmod_decl_self_pointer, AppMod, AppModBuilder, AppModConfigGetter, AppModInitOptions, AppModRuntime, MajordomeError};
+use majordome::{
+    appmod_decl_self_pointer, AppMod, AppModBuilder, AppModConfigGetter, AppModInitOptions,
+    AppModRuntime, MajordomeError,
+};
 use moka::future::Cache;
 
 use crate::{expiry::MajordomeExpiry, getter::MajordomeCacheGetter};
@@ -16,7 +23,7 @@ pub struct CacheValue {
 
 #[derive(Clone)]
 pub struct MajordomeCache {
-    pub response_cache: Cache<CacheKey, CacheValue>
+    pub response_cache: Cache<CacheKey, CacheValue>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -25,7 +32,6 @@ pub struct CacheConfig {
 }
 
 impl AppModRuntime for MajordomeCache {}
-
 
 #[async_trait]
 impl AppMod for MajordomeCache {
@@ -48,7 +54,10 @@ impl AppMod for MajordomeCache {
         _builder: &mut AppModBuilder,
         config: Self::ModConfig,
     ) -> Result<Self, MajordomeError> {
-        let cache = Cache::builder().max_capacity(config.max_size).expire_after(MajordomeExpiry).build();
+        let cache = Cache::builder()
+            .max_capacity(config.max_size)
+            .expire_after(MajordomeExpiry)
+            .build();
         Ok(MajordomeCache {
             response_cache: cache,
         })
@@ -60,15 +69,15 @@ impl MajordomeCache {
     /// The cache takes into account the type of the return value and the key.
     /// By default, the cache will not expire. You can set the expiration time with the ttl method.
     /// ```rust
-    /// 
+    ///
     /// async fn your_async_getter() -> Result<String, ()> {
     ///    tokio::time::sleep(Duration::from_secs(5)).await;
     ///    Ok("value".to_string())
     /// }
-    /// 
+    ///
     /// let cache = app.get::<MajordomeCache>()?;
     /// cache.key(("key1", 1, 5)).ttl(60).try_get_with(your_async_getter).await?;
-    /// 
+    ///
     /// ```
     pub fn key<T: Hash>(&self, key: T) -> MajordomeCacheGetter {
         MajordomeCacheGetter::new(self, key)

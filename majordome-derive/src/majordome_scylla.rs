@@ -92,16 +92,20 @@ pub(crate) fn parse_struct_orm(input: TokenStream) -> TokenStream {
                     }
 
                     let meta = attr.parse_meta().unwrap();
-                    
+
                     match meta {
                         Meta::List(nv) => {
                             for nested_meta in nv.nested {
                                 if let NestedMeta::Meta(Meta::NameValue(nv)) = nested_meta {
                                     match nv.path.get_ident() {
-                                        Some(ident) if ident == "map" || ident == "counter" || ident == "set" => {
+                                        Some(ident)
+                                            if ident == "map"
+                                                || ident == "counter"
+                                                || ident == "set" =>
+                                        {
                                             fieldsettings.is_map = true;
                                             fieldsettings.kind = ident.to_string();
-                                        },
+                                        }
                                         _ => (),
                                     }
                                 }
@@ -118,9 +122,6 @@ pub(crate) fn parse_struct_orm(input: TokenStream) -> TokenStream {
             panic!("Attribute only applicable for structs")
         }
     }
-
-    println!("{:?}", tablesettings);
-    println!("{:?}", fields);
 
     let table = tablesettings.table.expect("Table name not provided");
     let indexes = tablesettings.indexes;
@@ -186,19 +187,30 @@ impl Renderer {
         let table = &self.table;
         let updatewhereclause = self.render_update_where_clause();
 
+        let newmethod = self.render_new_method();
+        let query = format!(
+            "SELECT {} FROM {}",
+            self.fields
+                .iter()
+                .map(|f| f.name.clone())
+                .collect::<Vec<String>>()
+                .join(", "),
+            self.table
+        );
+        let select_methods = self.render_select_methods();
         let genmod = quote! {
             mod #modname {
                 use ::scylla::frame::value::LegacySerializedValues;
                 use super::*;
 
-                pub struct #updatername<'a> {
-                    inner: &'a mut #structname,
+                pub struct #updatername {
+                    inner:  #structname,
                     operations: Vec<u32>,
                     values: LegacySerializedValues
                 }
 
-                impl<'a> #updatername<'a> {
-                    pub fn new(inner: &'a mut #structname) -> Self {
+                impl #updatername {
+                    pub fn new(inner: #structname) -> Self {
                         Self {
                             inner,
                             operations: Vec::new(),
@@ -207,11 +219,11 @@ impl Renderer {
                     }
 
                     fn get_hash(&self) -> u64 {
-                        use std::collections::hash_map::DefaultHasher;
-                        use std::hash::{Hash, Hasher};
-            
+                        use ::std::collections::hash_map::DefaultHasher;
+                        use ::std::hash::{Hash, Hasher};
+
                         let mut hasher = DefaultHasher::new();
-                        TypeId::of::<Self>().hash(&mut hasher);
+                        ::core::any::TypeId::of::<Self>().hash(&mut hasher);
                         self.operations.hash(&mut hasher);
                         hasher.finish()
                     }
@@ -219,20 +231,50 @@ impl Renderer {
                     fn generate_update_query(&self) -> String {
                         let q = self.operations.iter().map(|opcode| {
                             #mqq
-                        }).collect::<Vec<&str>>().join(", ");
-            
+                        }).collect::<Vec<String>>().join(", ");
+
                         format!("UPDATE {} SET {} WHERE {}", #table, q, #updatewhereclause)
                     }
 
-                    pub async fn save(self, scylla: &::majordome_scylla::ScyllaDB) -> Result<(), ::scylla::Error> {
-                        let prepared = scylla.prepare_query_by_hash(self.get_hash(), || {
+                    pub async fn save(self, scylla: &::majordome_scylla::ScyllaDB) -> Result<#structname, ::scylla::transport::errors::QueryError> {
+                        if self.operations.is_empty() {
+                            return Ok(self.inner);
+                        }
+                        let prepared = scylla.prepare_by_hash_or(self.get_hash(), || {
                             self.generate_update_query()
                         }).await?;
 
-                        scylla.execute(prepared, self.values).await
+                        scylla.execute(&prepared, self.values).await?;
+
+                        Ok(self.inner)
+                    }
+
+                    pub unsafe fn get_inner(&self) -> &#structname {
+                        &self.inner
                     }
 
                     #methods
+                }
+
+                impl #structname {
+                    #newmethod
+
+                    #select_methods
+                }
+
+                impl ::majordome_scylla::MjScyllaORM for #structname {
+                    type Updater = #updatername;
+                    fn update(self) -> #updatername {
+                        #updatername::new(self)
+                    }
+
+                    fn table_name() -> &'static str {
+                        #table
+                    }
+
+                    fn query() -> &'static str {
+                        #query
+                    }
                 }
             }
         };
@@ -258,7 +300,7 @@ impl Renderer {
                 continue;
             }
             let fieldname = &field.name;
-            let mut opcode = branches.len();
+            let mut opcode = branches.len() as u32;
 
             branches.push(quote! {
                 #opcode => format!("{} = ?", #fieldname)
@@ -267,11 +309,11 @@ impl Renderer {
             if field.is_map {
                 opcode += 1;
                 branches.push(quote! {
-                    #opcode => format!("{} = {} + ?", #fieldname)
+                    #opcode => format!("{} = {} + ?", #fieldname, #fieldname)
                 });
                 opcode += 1;
                 branches.push(quote! {
-                    #opcode => format!("{} = {} - ?", #fieldname)
+                    #opcode => format!("{} = {} - ?", #fieldname, #fieldname)
                 });
             }
         }
@@ -281,7 +323,8 @@ impl Renderer {
                 #(#branches),*,
                 _ => panic!("Invalid opcode")
             }
-        }.into()
+        }
+        .into()
     }
 
     fn render_methods(&self) -> proc_macro2::TokenStream {
@@ -297,9 +340,9 @@ impl Renderer {
 
             methods.push(quote! {
                 pub fn #methodname_set(&mut self, value: #typename) -> &mut Self {
-                    self.inner.#fieldname = value;
+                    self.inner.#fieldname = value.clone();
                     self.operations.push(#opcode);
-                    self.values.add_value(value);
+                    self.values.add_value(&value).unwrap();
                     self
                 }
             });
@@ -309,50 +352,55 @@ impl Renderer {
                 let methodname_add = quote::format_ident!("{}_add", fieldname);
                 let modifier = match &field.kind[..] {
                     "map" => quote! {
-                        self.inner.#fieldname.extend(value);
+                        self.inner.#fieldname.extend(value.clone());
                     },
                     "counter" => quote! {
                         self.inner.#fieldname += value;
                     },
                     "set" => quote! {
-                        for v in value {
+                        for v in value.clone() {
                             self.inner.#fieldname.insert(v);
                         }
                     },
-                    _ => quote! {}
+                    _ => quote! {},
                 };
                 methods.push(quote! {
                     pub fn #methodname_add(&mut self, value: #typename) -> &mut Self {
                         #modifier
                         self.operations.push(#opcode);
-                        self.values.add_value(value);
+                        self.values.add_value(&value).unwrap();
                         self
                     }
                 });
 
                 opcode += 1;
                 let methodname_rem = quote::format_ident!("{}_rem", fieldname);
+                let typename = match &field.kind[..] {
+                    "map" => syn::parse_str::<Type>(&self.get_map_delete_key_ty(&field.type_name))
+                        .unwrap(),
+                    _ => typename.clone(),
+                };
                 let modifier = match &field.kind[..] {
                     "map" => quote! {
-                        for (k, v) in value {
-                            self.inner.#fieldname.remove(&k);
+                        for k in value.iter() {
+                            self.inner.#fieldname.remove(k);
                         }
                     },
                     "counter" => quote! {
                         self.inner.#fieldname -= value;
                     },
                     "set" => quote! {
-                        for v in value {
-                            self.inner.#fieldname.remove(&v);
+                        for v in value.iter() {
+                            self.inner.#fieldname.remove(v);
                         }
                     },
-                    _ => quote! {}
+                    _ => quote! {},
                 };
                 methods.push(quote! {
                     pub fn #methodname_rem(&mut self, value: #typename) -> &mut Self {
                         #modifier
                         self.operations.push(#opcode);
-                        self.values.add_value(value);
+                        self.values.add_value(&value).unwrap();
                         self
                     }
                 });
@@ -361,6 +409,131 @@ impl Renderer {
 
         quote! {
             #(#methods)*
+        }
+    }
+
+    fn get_map_delete_key_ty(&self, ty: &str) -> String {
+        let ty = ty.trim();
+        let ty = ty
+            .split('<')
+            .last()
+            .unwrap()
+            .split(',')
+            .next()
+            .unwrap()
+            .trim();
+        format!("::std::vec::Vec<{}>", ty)
+    }
+
+    fn render_new_method(&self) -> proc_macro2::TokenStream {
+        let mut fn_args = Vec::new();
+        let mut fields = Vec::new();
+        for field in self.fields.iter() {
+            let fieldname = quote::format_ident!("{}", field.name);
+            let typename = syn::parse_str::<Type>(&field.type_name).unwrap();
+
+            if field.is_pk {
+                fn_args.push(quote! {
+                    #fieldname: #typename
+                });
+                fields.push(quote! {
+                    #fieldname
+                });
+            } else {
+                fields.push(quote! {
+                    #fieldname: std::default::Default::default()
+                });
+            }
+        }
+
+        quote! {
+            pub fn new(#(#fn_args),*) -> Self {
+                Self {
+                    #(#fields),*
+                }
+            }
+        }
+    }
+
+    fn render_select_methods(&self) -> proc_macro2::TokenStream {
+        let mut methods = vec![
+            (self.primary_key.clone(), false) // (args, is_index)
+        ];
+        
+        let mut args = self.primary_key.clone();
+        for field in self.clustering_key.iter() {
+            args.push(field.clone());
+            methods.push((args.clone(), false));
+        }
+
+        for index in self.indexes.iter() {
+            methods.push((vec![index.clone()], true));
+        }
+
+        let mut select_methods = Vec::new();
+        for (args, is_index) in methods {
+            let method = self.render_select_method(args, is_index);
+            select_methods.push(method);
+        }
+
+        quote! {
+            #(#select_methods)*
+        }
+    }
+
+    fn render_select_method(&self, args: Vec<String>, is_index: bool) -> proc_macro2::TokenStream {
+        let methodname = if is_index {
+            quote::format_ident!("select_by_{}_index", args[0])
+        } else {
+            quote::format_ident!("select_by_{}", args.last().unwrap())
+        };
+        
+        let mut whereclause = Vec::new();
+        for arg in args.iter() {
+            whereclause.push(format!("{} = ?", arg));
+        }
+
+        let whereclause = whereclause.join(" AND ");
+        let query = format!(
+            "SELECT {} FROM {} WHERE {}",
+            self.fields
+                .iter()
+                .map(|f| f.name.clone())
+                .collect::<Vec<String>>()
+                .join(", "),
+            self.table,
+            whereclause
+        );
+    
+        let mut nargs = Vec::new();
+        let mut values = Vec::new();
+        for arg in args.iter() {
+            let mut typename = self.fields.iter().find(|f| f.name == *arg).unwrap().type_name.clone();
+            if typename == "String" {
+                typename = "str".to_string();
+            }
+
+            let typename = syn::parse_str::<Type>(&typename).unwrap();
+            let arg = quote::format_ident!("{}", arg);
+            nargs.push(quote! {
+                #arg: &#typename
+            });
+            values.push(quote! { #arg });
+        }
+
+        quote! {
+            pub async fn #methodname(scylla: &::majordome_scylla::ScyllaDB, #(#nargs),*) -> Result<::majordome_scylla::MajordomeScyllaSelectResult<Self>, ::majordome::MajordomeError> {
+                let rows = scylla.query(#query, (#(#values),*,)).await?;
+
+                let mut resp = ::majordome_scylla::__private::smallvec::SmallVec::new();
+                if let Some(rows) = rows.rows {
+                    for row in rows {
+                        resp.push(row.into_typed::<Self>()?);
+                    }
+                }
+
+                Ok(::majordome_scylla::MajordomeScyllaSelectResult { resp })
+            }
         }
     }
 }

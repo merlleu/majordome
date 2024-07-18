@@ -1,8 +1,5 @@
 use crate::MajordomeError;
-use axum::{
-    extract::rejection::JsonRejection, extract::FromRequest,
-    response::IntoResponse,
-};
+use axum::{extract::rejection::JsonRejection, extract::FromRequest, response::IntoResponse};
 use serde::Serialize;
 
 /// Used for custom error rejections.
@@ -21,8 +18,6 @@ impl axum::response::IntoResponse for _MajordomeRejectionError {
     }
 }
 
-
-
 // JSON
 #[derive(FromRequest)]
 #[from_request(via(axum::Json), rejection(_MajordomeRejectionError))]
@@ -39,35 +34,35 @@ impl From<JsonRejection> for _MajordomeRejectionError {
     fn from(rejection: JsonRejection) -> Self {
         let e = match rejection {
             JsonRejection::BytesRejection(e) => MajordomeError {
-                error: format!("errors.generic.bad_request.json.bytes_rejection"),
+                error: format!("errors.http.bad_request.json.bytes_rejection"),
                 message: e.body_text(),
                 values: vec![e.body_text()],
-                status_code: 400
+                status_code: 400,
             },
             JsonRejection::JsonDataError(e) => MajordomeError {
-                error: format!("errors.generic.bad_request.json.data_error"),
+                error: format!("errors.http.bad_request.json.data_error"),
                 message: e.body_text(),
                 values: vec![e.body_text()],
-                status_code: 400
+                status_code: 400,
             },
             JsonRejection::JsonSyntaxError(e) => MajordomeError {
-                error: format!("errors.generic.bad_request.json.syntax_error"),
+                error: format!("errors.http.bad_request.json.syntax_error"),
                 message: e.body_text(),
                 values: vec![e.body_text()],
-                status_code: 400
+                status_code: 400,
             },
             JsonRejection::MissingJsonContentType(_e) => MajordomeError {
-                error: format!("errors.generic.bad_request.json.missing_content_type"),
+                error: format!("errors.http.bad_request.json.missing_content_type"),
                 message: format!("Expected request with `Content-Type: application/json`"),
                 values: vec![],
-                status_code: 415
+                status_code: 415,
             },
             _ => MajordomeError {
-                error: format!("errors.generic.bad_request.json.unknown"),
+                error: format!("errors.http.bad_request.json.unknown"),
                 message: format!("Unknown JSON error: {}", rejection.body_text()),
                 values: vec![rejection.body_text()],
-                status_code: 400
-            }
+                status_code: 400,
+            },
         };
         Self(e)
     }
@@ -84,4 +79,3 @@ impl<T: Serialize> IntoResponse for Form<T> {
         axum::Json(value).into_response()
     }
 }
-
