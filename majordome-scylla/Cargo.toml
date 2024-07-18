@@ -1,0 +1,12 @@
+[package]
+name = "majordome-scylla"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+async-trait = "0.1.81"
+majordome = "1"
+scylla = "0.13.1"
+dashmap = "4.0.0"
+tokio = { version = "1.38.0", features = ["sync"] }
+majordome-derive = { path = "../majordome-derive", version = "1" }

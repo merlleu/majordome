@@ -1,4 +1,5 @@
 mod majordome_errors;
+mod majordome_scylla;
 
 /// Derive macro for the `IntoMajordomeError` trait.
 /// Convert an enum to a MajordomeError.
@@ -41,4 +42,9 @@ mod majordome_errors;
 #[proc_macro_derive(IntoMajordomeError, attributes(err))]
 pub fn into_majordome_error_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     majordome_errors::parse_enum_error(input)
+}
+
+#[proc_macro_derive(ScyllaRow, attributes(scylla))]
+pub fn scylla_row_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    majordome_scylla::parse_struct_orm(input)
 }
