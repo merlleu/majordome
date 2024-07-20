@@ -204,7 +204,7 @@ impl Renderer {
                 use super::*;
 
                 pub struct #updatername {
-                    inner:  #structname,
+                    pub inner:  #structname,
                     operations: Vec<u32>,
                     values: LegacySerializedValues
                 }
@@ -248,11 +248,10 @@ impl Renderer {
 
                         Ok(self.inner)
                     }
-
-                    pub unsafe fn get_inner(&self) -> &#structname {
-                        &self.inner
+                    
+                    pub fn is_saved(&self) -> bool {
+                        self.operations.is_empty()
                     }
-
                     #methods
                 }
 
