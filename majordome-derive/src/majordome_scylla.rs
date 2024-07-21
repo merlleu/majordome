@@ -204,15 +204,15 @@ impl Renderer {
                 use super::*;
 
                 pub struct #updatername {
-                    pub inner:  #structname,
+                    // pub inner:  #structname,
                     operations: Vec<u32>,
                     values: LegacySerializedValues
                 }
 
                 impl #updatername {
-                    pub fn new(inner: #structname) -> Self {
+                    pub fn new() -> Self {
                         Self {
-                            inner,
+                            // inner,
                             operations: Vec::new(),
                             values: LegacySerializedValues::new()
                         }
@@ -231,14 +231,14 @@ impl Renderer {
                     fn generate_update_query(&self) -> String {
                         let q = self.operations.iter().map(|opcode| {
                             #mqq
-                        }).collect::<Vec<String>>().join(", ");
+                        }).collect::<Vec<&str>>().join(", ");
 
                         format!("UPDATE {} SET {} WHERE {}", #table, q, #updatewhereclause)
                     }
 
-                    pub async fn save(self, scylla: &::majordome_scylla::ScyllaDB) -> Result<#structname, ::scylla::transport::errors::QueryError> {
+                    pub async fn save(self, scylla: &::majordome_scylla::ScyllaDB) -> Result<(), ::scylla::transport::errors::QueryError> {
                         if self.operations.is_empty() {
-                            return Ok(self.inner);
+                            return Ok(());
                         }
                         let prepared = scylla.prepare_by_hash_or(self.get_hash(), || {
                             self.generate_update_query()
@@ -246,7 +246,7 @@ impl Renderer {
 
                         scylla.execute(&prepared, self.values).await?;
 
-                        Ok(self.inner)
+                        Ok(())
                     }
                     
                     pub fn is_saved(&self) -> bool {
@@ -264,7 +264,7 @@ impl Renderer {
                 impl ::majordome_scylla::ScyllaORMTable for #structname {
                     type Updater = #updatername;
                     fn update(self) -> #updatername {
-                        #updatername::new(self)
+                        #updatername::new()
                     }
 
                     fn table_name() -> &'static str {
@@ -301,18 +301,21 @@ impl Renderer {
             let fieldname = &field.name;
             let mut opcode = branches.len() as u32;
 
+            let query_part = format!("{} = ?", fieldname);
             branches.push(quote! {
-                #opcode => format!("{} = ?", #fieldname)
+                #opcode => #query_part
             });
 
             if field.is_map {
                 opcode += 1;
+                let query_part = format!("{0} = {0} + ?", fieldname);
                 branches.push(quote! {
-                    #opcode => format!("{} = {} + ?", #fieldname, #fieldname)
+                    #opcode => #query_part
                 });
                 opcode += 1;
+                let query_part = format!("{0} = {0} - ?", fieldname);
                 branches.push(quote! {
-                    #opcode => format!("{} = {} - ?", #fieldname, #fieldname)
+                    #opcode => #query_part
                 });
             }
         }
@@ -339,7 +342,7 @@ impl Renderer {
 
             methods.push(quote! {
                 pub fn #methodname_set(&mut self, value: #typename) -> &mut Self {
-                    self.inner.#fieldname = value.clone();
+                    // self.inner.#fieldname = value.clone();
                     self.operations.push(#opcode);
                     self.values.add_value(&value).unwrap();
                     self
@@ -349,23 +352,23 @@ impl Renderer {
             if field.is_map {
                 opcode += 1;
                 let methodname_add = quote::format_ident!("{}_add", fieldname);
-                let modifier = match &field.kind[..] {
-                    "map" => quote! {
-                        self.inner.#fieldname.extend(value.clone());
-                    },
-                    "counter" => quote! {
-                        self.inner.#fieldname += value;
-                    },
-                    "set" => quote! {
-                        for v in value.clone() {
-                            self.inner.#fieldname.insert(v);
-                        }
-                    },
-                    _ => quote! {},
-                };
+                // let modifier = match &field.kind[..] {
+                //     "map" => quote! {
+                //         self.inner.#fieldname.extend(value.clone());
+                //     },
+                //     "counter" => quote! {
+                //         self.inner.#fieldname += value;
+                //     },
+                //     "set" => quote! {
+                //         for v in value.clone() {
+                //             self.inner.#fieldname.insert(v);
+                //         }
+                //     },
+                //     _ => quote! {},
+                // };
                 methods.push(quote! {
                     pub fn #methodname_add(&mut self, value: #typename) -> &mut Self {
-                        #modifier
+                        // #modifier
                         self.operations.push(#opcode);
                         self.values.add_value(&value).unwrap();
                         self
@@ -379,25 +382,25 @@ impl Renderer {
                         .unwrap(),
                     _ => typename.clone(),
                 };
-                let modifier = match &field.kind[..] {
-                    "map" => quote! {
-                        for k in value.iter() {
-                            self.inner.#fieldname.remove(k);
-                        }
-                    },
-                    "counter" => quote! {
-                        self.inner.#fieldname -= value;
-                    },
-                    "set" => quote! {
-                        for v in value.iter() {
-                            self.inner.#fieldname.remove(v);
-                        }
-                    },
-                    _ => quote! {},
-                };
+                // let modifier = match &field.kind[..] {
+                //     "map" => quote! {
+                //         for k in value.iter() {
+                //             self.inner.#fieldname.remove(k);
+                //         }
+                //     },
+                //     "counter" => quote! {
+                //         self.inner.#fieldname -= value;
+                //     },
+                //     "set" => quote! {
+                //         for v in value.iter() {
+                //             self.inner.#fieldname.remove(v);
+                //         }
+                //     },
+                //     _ => quote! {},
+                // };
                 methods.push(quote! {
                     pub fn #methodname_rem(&mut self, value: #typename) -> &mut Self {
-                        #modifier
+                        // #modifier
                         self.operations.push(#opcode);
                         self.values.add_value(&value).unwrap();
                         self

@@ -25,8 +25,5 @@ fn test() {
         m
     });
 
-    let inner = unsafe { m.get_inner() };
-
-    assert_eq!(inner.email, Some("test".to_string()));
-    assert_eq!(inner.assets.get("test"), Some(&"test".to_string()));
+    assert!(!m.is_saved())
 }
