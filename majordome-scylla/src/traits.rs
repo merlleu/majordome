@@ -3,7 +3,7 @@ use scylla::FromRow;
 
 pub trait ScyllaORMTable {
     type Updater;
-    fn update(self) -> Self::Updater;
+    fn update(&self) -> Self::Updater;
     // fn select<T>(&self) -> T;
     fn table_name() -> &'static str;
     fn query() -> &'static str;
