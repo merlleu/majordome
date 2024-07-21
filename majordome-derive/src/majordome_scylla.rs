@@ -188,6 +188,7 @@ impl Renderer {
         let updatewhereclause = self.render_update_where_clause();
 
         let newmethod = self.render_new_method();
+        let updatermethod = self.render_update_method();
         let query = format!(
             "SELECT {} FROM {}",
             self.fields
@@ -198,21 +199,36 @@ impl Renderer {
             self.table
         );
         let select_methods = self.render_select_methods();
+        let pktypes = self
+            .fields
+            .iter()
+            .filter(|f| f.is_pk)
+            .map(|f| syn::parse_str::<Type>(&f.type_name).unwrap())
+            .collect::<Vec<_>>();
+
+        let pk_add_quote = (0..pktypes.len()).map(
+            |i| {
+                let idx = syn::Index::from(i);
+                quote!{ self.values.add_value(&self.pk.#idx).unwrap(); }
+            }
+        );
+            
+
         let genmod = quote! {
             mod #modname {
                 use ::scylla::frame::value::LegacySerializedValues;
                 use super::*;
 
-                pub struct #updatername {
-                    // pub inner:  #structname,
+                pub struct #updatername{
+                    pk: (#(#pktypes),*,),
                     operations: Vec<u32>,
                     values: LegacySerializedValues
                 }
 
                 impl #updatername {
-                    pub fn new() -> Self {
+                    pub fn new(pk: (#(#pktypes),*,), ) -> Self {
                         Self {
-                            // inner,
+                            pk,
                             operations: Vec::new(),
                             values: LegacySerializedValues::new()
                         }
@@ -236,7 +252,7 @@ impl Renderer {
                         format!("UPDATE {} SET {} WHERE {}", #table, q, #updatewhereclause)
                     }
 
-                    pub async fn save(self, scylla: &::majordome_scylla::ScyllaDB) -> Result<(), ::scylla::transport::errors::QueryError> {
+                    pub async fn save(mut self, scylla: &::majordome_scylla::ScyllaDB) -> Result<(), ::scylla::transport::errors::QueryError> {
                         if self.operations.is_empty() {
                             return Ok(());
                         }
@@ -244,11 +260,13 @@ impl Renderer {
                             self.generate_update_query()
                         }).await?;
 
+                        #(#pk_add_quote)*
+                        
                         scylla.execute(&prepared, self.values).await?;
 
                         Ok(())
                     }
-                    
+
                     pub fn is_saved(&self) -> bool {
                         self.operations.is_empty()
                     }
@@ -263,9 +281,7 @@ impl Renderer {
 
                 impl ::majordome_scylla::ScyllaORMTable for #structname {
                     type Updater = #updatername;
-                    fn update(&self) -> #updatername {
-                        #updatername::new()
-                    }
+                    #updatermethod
 
                     fn table_name() -> &'static str {
                         #table
@@ -457,11 +473,29 @@ impl Renderer {
         }
     }
 
+    fn render_update_method(&self) -> proc_macro2::TokenStream {
+        let mut fields = Vec::new();
+        for field in self.fields.iter() {
+            if !field.is_pk { continue; }
+            let fieldname = quote::format_ident!("{}", field.name);
+            fields.push(quote! {
+                self.#fieldname.clone()
+            });
+        }
+
+        quote! {
+            fn update(&self) -> Self::Updater {
+                let pk = (#(#fields),*,);
+                Self::Updater::new(pk)
+            }
+        }
+    }
+
     fn render_select_methods(&self) -> proc_macro2::TokenStream {
         let mut methods = vec![
-            (self.primary_key.clone(), false) // (args, is_index)
+            (self.primary_key.clone(), false), // (args, is_index)
         ];
-        
+
         let mut args = self.primary_key.clone();
         for field in self.clustering_key.iter() {
             args.push(field.clone());
@@ -489,7 +523,7 @@ impl Renderer {
         } else {
             quote::format_ident!("select_by_{}", args.last().unwrap())
         };
-        
+
         let mut whereclause = Vec::new();
         for arg in args.iter() {
             whereclause.push(format!("{} = ?", arg));
@@ -506,11 +540,17 @@ impl Renderer {
             self.table,
             whereclause
         );
-    
+
         let mut nargs = Vec::new();
         let mut values = Vec::new();
         for arg in args.iter() {
-            let mut typename = self.fields.iter().find(|f| f.name == *arg).unwrap().type_name.clone();
+            let mut typename = self
+                .fields
+                .iter()
+                .find(|f| f.name == *arg)
+                .unwrap()
+                .type_name
+                .clone();
             if typename == "String" {
                 typename = "str".to_string();
             }
