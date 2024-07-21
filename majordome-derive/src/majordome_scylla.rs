@@ -292,6 +292,7 @@ impl Renderer {
                     }
                 }
             }
+            pub use #modname::*;
         };
 
         genmod.into()
