@@ -38,7 +38,7 @@ where
     ) -> Result<Self, MajordomeError>;
 }
 
-pub trait AppModPointer {
+pub trait AppModPointer: Send + Sync + 'static {
     type Target: Any + Send + Sync + Clone + AppModRuntime + AppMod;
     fn opt(
         _builder: &mut AppModBuilder,
