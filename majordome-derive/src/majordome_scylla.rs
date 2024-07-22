@@ -552,6 +552,11 @@ impl Renderer {
                 .unwrap()
                 .type_name
                 .clone();
+            
+            if typename.starts_with("Option < ") {
+                typename = typename[9..typename.len()-2].to_string();
+            }
+
             if typename == "String" {
                 typename = "str".to_string();
             }
