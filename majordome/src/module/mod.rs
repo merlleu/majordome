@@ -206,6 +206,12 @@ macro_rules! appmod_decl_ns_pointer {
                 ::majordome::AppModInitOptions::new().ns($ns)
             }
         }
+
+        impl Into<$target> for $name {
+            fn into(self) -> $target {
+                panic!("This should never be called");
+            }
+        }
     };
 }
 
