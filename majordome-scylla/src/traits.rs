@@ -13,6 +13,8 @@ pub struct MajordomeScyllaSelectResult<T: FromRow + ScyllaORMTable> {
     pub resp: smallvec::SmallVec<[T; 1]>,
 }
 
+pub type UniqueQueryResult<T> = Result<Result<T, MajordomeError>, MajordomeError>;
+
 impl<T> MajordomeScyllaSelectResult<T>
 where
     T: FromRow + ScyllaORMTable,
