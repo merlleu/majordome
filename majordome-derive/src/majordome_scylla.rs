@@ -252,7 +252,7 @@ impl Renderer {
                         format!("UPDATE {} SET {} WHERE {}", #table, q, #updatewhereclause)
                     }
 
-                    pub async fn save(mut self, scylla: &::majordome_scylla::ScyllaDB) -> Result<(), ::scylla::transport::errors::QueryError> {
+                    pub async fn save(&mut self, scylla: &::majordome_scylla::ScyllaDB) -> Result<(), ::scylla::transport::errors::QueryError> {
                         if self.operations.is_empty() {
                             return Ok(());
                         }
@@ -262,8 +262,11 @@ impl Renderer {
 
                         #(#pk_add_quote)*
                         
-                        scylla.execute(&prepared, self.values).await?;
+                        let mut values = LegacySerializedValues::new();
+                        std::mem::swap(&mut values, &mut self.values);
+                        scylla.execute(&prepared, &values).await?;
 
+                        self.operations = Vec::new();
                         Ok(())
                     }
 
