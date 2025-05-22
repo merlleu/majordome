@@ -81,7 +81,7 @@ pub fn into_majordome_error_derive(input: proc_macro::TokenStream) -> proc_macro
 ///    m
 /// }).save().await?;
 /// ```
-#[proc_macro_derive(ScyllaRow, attributes(scylla))]
+#[proc_macro_derive(ScyllaRow, attributes(majordome_scylla))]
 pub fn scylla_row_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     majordome_scylla::parse_struct_orm(input)
 }

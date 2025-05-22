@@ -2,13 +2,13 @@ use majordome_scylla::{ScyllaORMTable, ScyllaRow};
 use scylla::FromRow;
 
 #[derive(ScyllaRow, FromRow)]
-#[scylla(table = "users", primary_key = "id", indexes= "email")]
+#[majordome_scylla(table = "users", primary_key = "id", indexes= "email")]
 pub struct UserDBRepr {
     pub id: i64,                 // pk=static
     pub email: Option<String>,   // string = set
     pub sponsor_id: Option<i64>, // int = set
     pub p_desc: Option<String>,  // string = set
-    #[scylla(map = 1)]
+    #[majordome_scylla(map = 1)]
     pub assets: std::collections::BTreeMap<String, String>, // map = set,mapadd,mapremove
     pub flags: i64,
 }
