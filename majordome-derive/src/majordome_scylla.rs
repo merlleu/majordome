@@ -32,7 +32,7 @@ pub(crate) fn parse_struct_orm(input: TokenStream) -> TokenStream {
     };
 
     for attr in ast.attrs.iter() {
-        if !attr.path.is_ident("scylla_orm") {
+        if !attr.path.is_ident("majordome_scylla") {
             continue;
         }
 
