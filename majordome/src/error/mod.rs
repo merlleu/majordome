@@ -6,6 +6,7 @@ use apistos_schemars as schemars;
 
 #[derive(Debug, serde::Serialize, Clone)]
 #[cfg_attr(feature = "actix", derive(apistos_schemars::JsonSchema))]
+#[cfg_attr(all(not(feature = "actix"), feature="axum"), derive(schemars::JsonSchema))]
 #[non_exhaustive]
 pub struct MajordomeError {
     pub error: String,
