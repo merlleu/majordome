@@ -1,6 +1,7 @@
 use crate::MajordomeError;
 use axum::{extract::rejection::JsonRejection, extract::FromRequest, response::IntoResponse};
 use serde::Serialize;
+use aide::OperationOutput;
 
 /// Used for custom error rejections.
 pub struct _MajordomeRejectionError(MajordomeError);
@@ -10,6 +11,12 @@ impl axum::response::IntoResponse for MajordomeError {
         let status = axum::http::StatusCode::from_u16(self.status_code).unwrap();
         (status, Json(self)).into_response()
     }
+}
+
+// impl IntoApiResponse for MajordomeError {}
+
+impl OperationOutput for MajordomeError {
+    type Inner = MajordomeError;
 }
 
 impl axum::response::IntoResponse for _MajordomeRejectionError {
