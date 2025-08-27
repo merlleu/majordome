@@ -1,6 +1,6 @@
 [package]
 name = "majordome-cache"
-version = "1.0.2"
+version = "1.0.3"
 edition = "2021"
 description = "A cache module for Majordome. Currently based on Moka."
 license = "MIT"
