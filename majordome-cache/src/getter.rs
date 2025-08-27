@@ -16,8 +16,8 @@ pub struct MajordomeCacheGetter<'a> {
 
 pub struct CacheItem<T> {
     pub value: Arc<T>,
-    pub created_at: SystemTime,
-    pub hit: bool,
+    created_at: SystemTime,
+    hit: bool,
 }
 
 impl<T> CacheItem<T> {
