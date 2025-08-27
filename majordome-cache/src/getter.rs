@@ -3,6 +3,7 @@ use std::{
     future::Future,
     hash::{DefaultHasher, Hash, Hasher},
     sync::Arc,
+    time::SystemTime,
 };
 
 use crate::appmod::{CacheValue, MajordomeCache};
@@ -11,6 +12,22 @@ pub struct MajordomeCacheGetter<'a> {
     key: u64,
     ttl: u64,
     svc: &'a MajordomeCache,
+}
+
+pub struct CacheItem<T> {
+    pub value: Arc<T>,
+    pub created_at: SystemTime,
+    pub hit: bool,
+}
+
+impl<T> CacheItem<T> {
+    pub fn hit(&self) -> bool {
+        self.hit
+    }
+
+    pub fn age(&self) -> std::time::Duration {
+        self.created_at.elapsed().unwrap_or_default()
+    }
 }
 
 impl<'a> MajordomeCacheGetter<'a> {
@@ -24,14 +41,15 @@ impl<'a> MajordomeCacheGetter<'a> {
         self
     }
 
-    pub async fn try_get_with<T, E>(
+    pub async fn try_get_with_meta<T, E>(
         &self,
         future: impl Future<Output = Result<T, E>>,
-    ) -> Result<Arc<T>, E>
+    ) -> Result<CacheItem<T>, E>
     where
         T: 'static + Send + Sync,
         E: 'static + Clone + Send + Sync,
     {
+        let nonce = rand::random::<u64>();
         let key = (TypeId::of::<T>(), self.key);
         let r = self
             .svc
@@ -41,6 +59,8 @@ impl<'a> MajordomeCacheGetter<'a> {
                     Ok(v) => Ok(CacheValue {
                         value: (Arc::new(v) as Arc<dyn Any + Send + Sync>),
                         ttl: self.ttl,
+                        created_at: SystemTime::now(),
+                        nonce,
                     }),
                     Err(e) => Err(e),
                 }
@@ -48,9 +68,26 @@ impl<'a> MajordomeCacheGetter<'a> {
             .await;
 
         match r {
-            Ok(v) => Ok(v.value.downcast::<T>().unwrap().clone()),
+            Ok(v) => Ok(CacheItem {
+                value: v.value.downcast::<T>().unwrap().clone(),
+                created_at: v.created_at,
+                hit: v.nonce != nonce,
+            }),
             Err(e) => Err((*e).clone()),
         }
+    }
+
+    #[deprecated(note = "use try_get_with_meta instead")]
+    pub async fn try_get_with<T, E>(
+        &self,
+        future: impl Future<Output = Result<T, E>>,
+    ) -> Result<Arc<T>, E>
+    where
+        T: 'static + Send + Sync,
+        E: 'static + Clone + Send + Sync,
+    {
+        let r = self.try_get_with_meta(future).await?.value;
+        Ok(r)
     }
 }
 

@@ -2,6 +2,7 @@ use std::{
     any::{Any, TypeId},
     hash::Hash,
     sync::Arc,
+    time::SystemTime,
 };
 
 use async_trait::async_trait;
@@ -19,6 +20,8 @@ pub(crate) type CacheKey = (TypeId, u64);
 pub struct CacheValue {
     pub value: Arc<dyn Any + Send + Sync>,
     pub ttl: u64,
+    pub created_at: SystemTime,
+    pub nonce: u64,
 }
 
 #[derive(Clone)]
