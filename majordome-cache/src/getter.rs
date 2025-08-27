@@ -14,8 +14,9 @@ pub struct MajordomeCacheGetter<'a> {
     svc: &'a MajordomeCache,
 }
 
+#[derive(Clone)]
 pub struct CacheItem<T> {
-    pub value: Arc<T>,
+    value: Arc<T>,
     created_at: SystemTime,
     hit: bool,
 }
@@ -27,6 +28,10 @@ impl<T> CacheItem<T> {
 
     pub fn age(&self) -> std::time::Duration {
         self.created_at.elapsed().unwrap_or_default()
+    }
+
+    pub fn value(self) -> Arc<T> {
+        self.value
     }
 }
 
@@ -86,7 +91,7 @@ impl<'a> MajordomeCacheGetter<'a> {
         T: 'static + Send + Sync,
         E: 'static + Clone + Send + Sync,
     {
-        let r = self.try_get_with_meta(future).await?.value;
+        let r = self.try_get_with_meta(future).await?.value();
         Ok(r)
     }
 }
