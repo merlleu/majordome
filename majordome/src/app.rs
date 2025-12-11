@@ -77,6 +77,7 @@ impl MajordomeApp {
             loadchain: Vec::new(),
             loaded: HashMap::new(),
             loaded_targets_count: 0,
+            env_entries: Vec::new(),
         }
     }
 }

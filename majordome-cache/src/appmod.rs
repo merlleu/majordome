@@ -46,7 +46,7 @@ impl AppMod for MajordomeCache {
         builder: &mut AppModBuilder,
         opts: AppModInitOptions<Self::InitOptions>,
     ) -> Result<Self::ModConfig, MajordomeError> {
-        let c = AppModConfigGetter::new(&opts, builder, "majordome_cache");
+        let mut c = AppModConfigGetter::new(&opts, builder, "majordome_cache");
 
         Ok(CacheConfig {
             max_size: c.get_or("max_size", &1000),

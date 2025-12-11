@@ -1,6 +1,7 @@
 use super::AppMod;
 use crate::{
-    AppModInitOptions, AppModPointer, AppModRuntime, AppModTask, MajordomeApp, MajordomeAppInner,
+    AppModInitOptions, AppModPointer, AppModRuntime, AppModTask, EnvEntry, MajordomeApp,
+    MajordomeAppInner,
 };
 use std::{
     any::TypeId,
@@ -15,6 +16,7 @@ pub struct AppModBuilder {
     pub(crate) loadchain: Vec<String>,
     pub(crate) loaded: HashMap<String, HashMap<TypeId, HashSet<u64>>>, // name -> (typeid, ConfigHash)
     pub(crate) loaded_targets_count: usize,
+    pub(crate) env_entries: Vec<EnvEntry>,
 }
 
 impl AppModBuilder {
@@ -143,7 +145,45 @@ impl AppModBuilder {
         self.app.modules.modules_targets_cache.insert(old);
     }
 
+    pub fn register_env_entry(&mut self, key: String, value: String) {
+        if !self.env_entries.iter().any(|e| e.key == key) {
+            self.env_entries.push(EnvEntry { key, value });
+        }
+    }
+
+    fn dump_env_entries_if_requested(&self) -> Option<bool> {
+        for arg in std::env::args() {
+            if let Some(file_path) = arg.strip_prefix("--majordome-dump-env=") {
+                let mut content = String::new();
+                for entry in &self.env_entries {
+                    content.push_str(&format!("{}={}\n", entry.key, entry.value));
+                }
+
+                match std::fs::write(file_path, content) {
+                    Ok(_) => {
+                        println!("Dumped {} env entries to '{}'", self.env_entries.len(), file_path);
+                        return Some(true);
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to dump env entries: {}", e);
+                        return Some(false);
+                    }
+                }
+            }
+        }
+
+        None
+    }
+
     pub async fn build(self) -> MajordomeApp {
+        if let Some(dumped) = self.dump_env_entries_if_requested() {
+            if dumped {
+                std::process::exit(0);
+            } else {
+                std::process::exit(1);
+            }
+        }
+
         println!(
             "🏁 Loaded {} modules ({} pointers).",
             self.loaded_targets_count,
