@@ -53,7 +53,7 @@ impl AppMod for ScyllaDB {
         builder: &mut AppModBuilder,
         opts: AppModInitOptions<Self::InitOptions>,
     ) -> Result<Self::ModConfig, MajordomeError> {
-        let c = AppModConfigGetter::new(&opts, builder, "db.scylla");
+        let mut c = AppModConfigGetter::new(&opts, builder, "db.scylla");
 
         let hosts = c
             .get_or_panic::<String>("hosts")
